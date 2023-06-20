@@ -51,6 +51,9 @@ class BaseFormatter:
             options.color == "auto"
             and sys.stdout.isatty()
             and _windows_color.terminal_supports_color
+            # As terminfo(5) might not be available, hard-code a denylist of
+            # very common terminals that are definitely NOT color capable.
+            and os.getenv('TERM') not in {'dumb', 'vt100', 'vt220'}
         )
         self.after_init()
 
