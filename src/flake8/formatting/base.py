@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 from typing import IO
 
@@ -47,11 +48,34 @@ class BaseFormatter:
         self.filename = options.output_file
         self.output_fd: IO[str] | None = None
         self.newline = "\n"
+        try:
+            terminfo_has_color = int(subprocess.check_output(['tput', 'colors']).strip()) > 0
+        except FileNotFoundError:  # tput not in $PATH
+            terminfo_has_color = None
+        except subprocess.CalledProcessError:  # $TERM not set
+            terminfo_has_color = None
+        except ValueError:      # tput isn't tput
+            terminfo_has_color = None
         self.color = options.color == "always" or (
             options.color == "auto"
             and sys.stdout.isatty()
             and _windows_color.terminal_supports_color
         )
+        # If tput is installed and EXPLICITLY says color is not supported, then
+        # don't try to use color.
+        try:
+            if options.color == "auto":
+                colors = int(subprocess.check_output(['tput', 'colors']).strip())
+                if colors < 2:
+                    self.color = False
+        except FileNotFoundError:
+            pass                # tput not in $PATH
+        except subprocess.CalledProcessError:
+            pass                # $TERM not set
+        except ValueError:
+            pass                # tput is broken
+
+
         self.after_init()
 
     def after_init(self) -> None:
