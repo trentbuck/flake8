@@ -51,6 +51,7 @@ class BaseFormatter:
             options.color == "auto"
             and sys.stdout.isatty()
             and _windows_color.terminal_supports_color
+            and _unix_color.terminal_supports_color
         )
         self.after_init()
 
